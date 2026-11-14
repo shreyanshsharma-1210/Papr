@@ -9,7 +9,27 @@ if (fs.existsSync(assetsDir)) {
   const cssFile = files.find((f) => f.endsWith(".css"));
   const clientJsFile = files.find((f) => f.startsWith("client-") && f.endsWith(".js"));
 
-  const html = `<!DOCTYPE html>
+  // Fetch the SSR rendered HTML from local server if running, or build full static shell
+  let preRenderedHtml = "";
+  try {
+    const res = await fetch("http://localhost:8080/");
+    if (res.ok) {
+      preRenderedHtml = await res.text();
+    }
+  } catch {
+    // dev server offline
+  }
+
+  let finalHtml = "";
+  if (preRenderedHtml && preRenderedHtml.includes("<body")) {
+    // Replace dev styles and vite scripts with production hashed assets
+    finalHtml = preRenderedHtml
+      .replace(/<link rel="stylesheet" href="\/src\/styles\.css"\/>/, `<link rel="stylesheet" href="/assets/${cssFile}"/>`)
+      .replace(/<link rel="stylesheet" href="\/@tanstack-start\/styles\.css[^"]*"\s*data-tanstack-router-dev-styles="true"\/>/, "")
+      .replace(/<script[^>]*virtual:tanstack-start-client-entry[^>]*><\/script>/g, `<script type="module" src="/assets/${clientJsFile}"></script>`)
+      .replace(/<script[^>]*@react-refresh[^>]*><\/script>/g, "");
+  } else {
+    finalHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -28,7 +48,8 @@ if (fs.existsSync(assetsDir)) {
   ${clientJsFile ? `<script type="module" src="/assets/${clientJsFile}"></script>` : ""}
 </body>
 </html>`;
+  }
 
-  fs.writeFileSync(path.join(clientDir, "index.html"), html, "utf-8");
-  console.log("dist/client/index.html generated successfully with CSS and JS bundles.");
+  fs.writeFileSync(path.join(clientDir, "index.html"), finalHtml, "utf-8");
+  console.log("dist/client/index.html generated with full HTML structure.");
 }
