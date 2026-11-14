@@ -1,155 +1,214 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { ShoppingBag, Trash2, Truck, Tag, MessageCircle } from "lucide-react";
+import { ShoppingBag, Trash2, Truck, MessageCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { useCart, lineLabel, linePrice } from "@/lib/cart-store";
 import { findProduct, buildClassKit, buildCollegeKit } from "@/lib/mock-data";
+import { KIT_IMAGES, PRINT_IMAGES } from "@/lib/product-images";
 import type { CartLine } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cart")({
-  component: Cart,
+  component: CartPage,
 });
 
-function Cart() {
+function CartPage() {
   const lines = useCart((s) => s.lines);
   const removeLine = useCart((s) => s.removeLine);
   const setQty = useCart((s) => s.setQty);
   const clear = useCart((s) => s.clear);
   const total = useCart((s) => s.total());
+  const subtotal = useCart((s) => s.subtotal());
+  const savings = useCart((s) => s.savings());
   const navigate = useNavigate();
 
   const groups = useMemo(() => {
     const g: Record<string, { idx: number; line: CartLine }[]> = {
-      "Class Kits": [],
-      "College Kits": [],
-      "Individual Items": [],
-      Printing: [],
+      "School Class Kits": [],
+      "Campus University Kits": [],
+      "Everyday Essentials": [],
+      "Print Studio Jobs": [],
     };
     lines.forEach((line, idx) => {
-      if (line.kind === "classKit") g["Class Kits"].push({ idx, line });
-      else if (line.kind === "collegeKit") g["College Kits"].push({ idx, line });
-      else if (line.kind === "printing") g["Printing"].push({ idx, line });
-      else g["Individual Items"].push({ idx, line });
+      if (line.kind === "classKit") g["School Class Kits"].push({ idx, line });
+      else if (line.kind === "collegeKit") g["Campus University Kits"].push({ idx, line });
+      else if (line.kind === "printing") g["Print Studio Jobs"].push({ idx, line });
+      else g["Everyday Essentials"].push({ idx, line });
     });
     return g;
   }, [lines]);
 
+  const deliveryFee = total >= 499 || total === 0 ? 0 : 49;
+  const grandTotal = total + deliveryFee;
+
   if (lines.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
-          <ShoppingBag className="h-7 w-7" />
+      <div className="mx-auto max-w-2xl px-4 py-24 text-center bg-[#F7F5EF]">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-md border-2 border-[#302033] bg-white text-[#302033] shadow-sm">
+          <ShoppingBag className="h-8 w-8" />
         </div>
-        <h1 className="mt-4 font-display text-2xl font-extrabold">Your cart is empty</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Add a class kit, college kit, or shop individual stationery.
+        <h1 className="mt-5 font-sans font-black text-3xl sm:text-4xl text-[#302033]">
+          Your Cart is Empty
+        </h1>
+        <p className="mt-2 text-xs sm:text-sm text-[#6F6273] max-w-sm mx-auto leading-relaxed">
+          Explore our verified school &amp; campus bundles, archival notebooks, or upload a document
+          to the print studio.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Link to="/class-kits" className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
-            Class Kits
-          </Link>
-          <Link to="/college-kits" className="rounded-full border px-4 py-2 text-sm font-bold">
-            College Kits
-          </Link>
-          <Link to="/shop" className="rounded-full border px-4 py-2 text-sm font-bold">
-            Shop
-          </Link>
-        </div>
-        <div className="mt-8 rounded-2xl border bg-secondary/40 p-4 text-sm text-muted-foreground">
-          Just want to send a handwritten booklist?{" "}
-          <a
-            href="https://wa.me/919999999999?text=Hi%2C%20here%27s%20my%20booklist%20photo"
-            className="font-semibold text-whatsapp underline"
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            to="/shop"
+            preload="intent"
+            className="rounded-xl bg-[#D7F05A] px-5 py-3 text-xs font-black uppercase tracking-wider text-[#302033] hover:bg-[#c8e348] shadow-xs border border-[#302033]/20"
           >
-            Send a photo on WhatsApp
-          </a>{" "}
-          — we'll build your kit.
+            Explore Catalogue
+          </Link>
+          <Link
+            to="/class-kits"
+            preload="intent"
+            className="rounded-xl border border-[#EDE9E1] bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#302033] hover:border-[#302033]"
+          >
+            School Kits
+          </Link>
+          <Link
+            to="/printing"
+            preload="intent"
+            className="rounded-xl border border-[#EDE9E1] bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#302033] hover:border-[#302033]"
+          >
+            Print Studio
+          </Link>
         </div>
       </div>
     );
   }
 
   const waMsg = encodeURIComponent(
-    `New order from Kaagaz Stationers Web:\n${lines.map((l) => `• ${lineLabel(l)} — ₹${linePrice(l)}`).join("\n")}\nTotal: ₹${total}`
+    `Order Requisition via PAPR Studios:\n${lines.map((l) => `• ${lineLabel(l)} — ₹${linePrice(l)}`).join("\n")}\n\nTotal: ₹${grandTotal}`,
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 md:py-10">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-extrabold md:text-3xl">Your Cart</h1>
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14 space-y-8 bg-[#F7F5EF]">
+      {/* Header */}
+      <div className="flex items-baseline justify-between border-b border-[#EDE9E1] pb-6">
+        <div>
+          <span className="font-sans text-[11px] uppercase tracking-wider font-black text-[#F16A45]">
+            Review Bag
+          </span>
+          <h1 className="font-sans font-black text-4xl sm:text-5xl text-[#302033] mt-1">
+            Your Cart
+          </h1>
+        </div>
         <button
           onClick={() => {
             clear();
             toast("Cart cleared");
           }}
-          className="text-xs text-muted-foreground hover:text-destructive"
+          className="text-xs font-bold uppercase tracking-wider text-[#6F6273] hover:text-[#E53935] transition-colors cursor-pointer"
         >
-          Clear all
+          Clear All
         </button>
       </div>
 
-      <div className="mt-6 grid gap-6 md:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 md:grid-cols-[1fr_340px]">
+        {/* Line Items Groups */}
         <div className="space-y-6">
           {Object.entries(groups).map(([title, entries]) =>
             entries.length === 0 ? null : (
-              <section key={title}>
-                <h2 className="font-display text-lg font-bold">{title}</h2>
-                <div className="mt-2 divide-y rounded-2xl border bg-card shadow-card">
+              <section
+                key={title}
+                className="rounded-md border border-[#EDE9E1] bg-white p-5 shadow-xs"
+              >
+                <h2 className="font-sans font-black text-lg text-[#302033] pb-3 border-b border-[#EDE9E1]">
+                  {title}
+                </h2>
+                <div className="divide-y divide-[#EDE9E1]">
                   {entries.map(({ idx, line }) => (
-                    <CartRow
+                    <CartItemRow
                       key={idx}
                       line={line}
                       onRemove={() => {
                         removeLine(idx);
-                        toast("Item removed");
+                        toast("Item removed from cart");
                       }}
                       onQty={(q) => setQty(idx, q)}
                     />
                   ))}
                 </div>
               </section>
-            )
+            ),
           )}
 
-          <div className="rounded-2xl border bg-secondary/50 p-4">
-            <div className="flex items-start gap-2 text-sm">
-              <Tag className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-              <div>
-                <div className="font-semibold">First-order discount auto-applied</div>
-                <div className="text-xs text-muted-foreground">
-                  Free first delivery in Indore. Order before 9 PM for same-day dispatch.
-                </div>
-              </div>
-            </div>
-          </div>
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#302033] hover:underline transition-colors pt-2"
+          >
+            <ArrowLeft className="h-4 w-4" /> Continue Shopping
+          </Link>
         </div>
 
-        <aside className="md:sticky md:top-20 md:self-start">
-          <div className="rounded-2xl border bg-card p-5 shadow-card">
-            <SummaryRow label="Items total" value={`₹${total}`} />
-            <SummaryRow label="Delivery" value="FREE (first order)" success />
-            <div className="my-3 border-t" />
-            <div className="flex items-baseline justify-between">
-              <span className="font-display text-base font-bold">Total</span>
-              <span className="font-display text-2xl font-extrabold">₹{total}</span>
+        {/* Order Summary Sidebar */}
+        <aside className="md:sticky md:top-24 md:self-start space-y-4">
+          <div className="rounded-md border-2 border-[#302033] bg-white p-6 shadow-sm">
+            <h3 className="font-sans font-black text-lg text-[#302033] pb-4 border-b border-[#EDE9E1]">
+              Order Summary
+            </h3>
+
+            <div className="mt-4 space-y-2.5 text-xs font-medium">
+              <div className="flex justify-between text-[#6F6273]">
+                <span>Subtotal (MRP)</span>
+                <span className="font-mono text-[#302033] font-bold">₹{subtotal}</span>
+              </div>
+
+              {savings > 0 && (
+                <div className="flex justify-between text-[#208B58] font-bold">
+                  <span>Bundle &amp; Volume Rebates</span>
+                  <span className="font-mono font-black">-₹{savings}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-[#6F6273]">
+                <span>Tracked Shipping</span>
+                <span className="font-mono text-[#302033] font-bold">
+                  {deliveryFee === 0 ? (
+                    <span className="text-[#208B58] font-black">Free</span>
+                  ) : (
+                    `₹${deliveryFee}`
+                  )}
+                </span>
+              </div>
+
+              {deliveryFee > 0 && (
+                <p className="text-[10px] text-[#6F6273]">
+                  Add ₹{499 - total} more for complimentary delivery.
+                </p>
+              )}
+
+              <div className="pt-3 border-t border-[#EDE9E1] flex items-baseline justify-between text-base">
+                <span className="font-sans font-black text-[#302033]">Total Payable</span>
+                <span className="font-sans font-black text-2xl text-[#302033]">₹{grandTotal}</span>
+              </div>
+              <p className="text-[10px] text-[#6F6273]">Inclusive of all applicable GST taxes.</p>
             </div>
-            <div className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Truck className="h-3 w-3" /> Same-day delivery available
-            </div>
-            <button
-              onClick={() => navigate({ to: "/checkout" })}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-soft hover:bg-primary/90"
+
+            <Link
+              to="/checkout"
+              preload="intent"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#D7F05A] px-4 py-3.5 text-xs font-black uppercase tracking-wider text-[#302033] hover:bg-[#c8e348] shadow-sm border border-[#302033]/20 transition-all active:scale-95"
             >
-              Proceed to Checkout
-            </button>
+              Proceed to Checkout <ArrowRight className="h-4 w-4" />
+            </Link>
+
             <a
-              href={`https://wa.me/919999999999?text=${waMsg}`}
+              href={`https://wa.me/919876543210?text=${waMsg}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-whatsapp px-4 py-3 text-sm font-bold text-whatsapp-foreground shadow-soft hover:bg-whatsapp/90"
+              className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#EDE9E1] bg-[#F7F5EF] px-4 py-2.5 text-xs font-bold text-[#302033] hover:border-[#208B58] transition-colors"
             >
-              <MessageCircle className="h-4 w-4" /> Send order on WhatsApp
+              <MessageCircle className="h-4 w-4 text-[#208B58]" /> Share Order via WhatsApp
             </a>
+          </div>
+
+          <div className="rounded border border-[#EDE9E1] bg-[#EDE9E1] p-4 text-[11px] text-[#6F6273] leading-relaxed flex items-center gap-2 font-medium">
+            <Truck className="h-4 w-4 text-[#302033] shrink-0" />
+            <span>Orders placed before 4:00 PM are dispatched on the same business day.</span>
           </div>
         </aside>
       </div>
@@ -157,16 +216,7 @@ function Cart() {
   );
 }
 
-function SummaryRow({ label, value, success }: { label: string; value: string; success?: boolean }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={success ? "font-semibold text-success" : "font-semibold"}>{value}</span>
-    </div>
-  );
-}
-
-function CartRow({
+function CartItemRow({
   line,
   onRemove,
   onQty,
@@ -177,58 +227,81 @@ function CartRow({
 }) {
   const price = linePrice(line);
   const label = lineLabel(line);
-  let sub = "";
+
+  let details = "";
+  let imageUrl = "/images/products/p-nb-200.jpg";
+
   if (line.kind === "product") {
     const p = findProduct(line.productId);
-    sub = p ? `${p.brand ?? ""} · ₹${p.price}/unit` : "";
+    details = p ? `${p.brand || "PAPR"} · MRP ₹${p.mrp}` : "";
+    if (p?.image) imageUrl = p.image;
+    else imageUrl = `/images/products/${line.productId}.jpg`;
   } else if (line.kind === "classKit") {
     const parts = line.kitId.split("-");
     const cls = Number(parts[1]);
     const stream = parts[2];
-    const s = stream ? ((stream[0].toUpperCase() + stream.slice(1)) as "Science" | "Commerce" | "Arts") : undefined;
+    const s = stream
+      ? ((stream[0].toUpperCase() + stream.slice(1)) as "Science" | "Commerce" | "Arts")
+      : undefined;
     const kit = buildClassKit(cls, s);
-    sub = `${kit.items.length} items · saved as bundle`;
+    details = `${kit.items.length} verified items included with 8% bundle discount`;
+    imageUrl = KIT_IMAGES.schoolKitFlatlay;
   } else if (line.kind === "collegeKit") {
     const [c, b, y] = line.kitId.split("-");
     const kit = buildCollegeKit(c, b, Number(y) as 1 | 2 | 3 | 4);
-    sub = `${kit.items.length} items · ${kit.expectedDelivery}`;
+    details = `${kit.items.length} items included · 10% campus discount`;
+    imageUrl = KIT_IMAGES.collegeKitFlatlay;
   } else if (line.kind === "printing") {
-    sub = line.summary;
+    details = line.summary;
+    imageUrl = PRINT_IMAGES.spiralBinding;
   }
+
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-bold uppercase text-muted-foreground">
-        {label.slice(0, 2)}
+    <div className="flex items-center justify-between gap-4 py-4">
+      {/* Thumbnail */}
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded border border-[#EDE9E1] bg-white shadow-xs">
+        <img src={imageUrl} alt={label} className="h-full w-full object-cover" />
       </div>
+
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold">{label}</div>
-        <div className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</div>
+        <h4 className="font-sans font-bold text-sm text-[#302033] truncate">{label}</h4>
+        <p className="mt-0.5 text-xs text-[#6F6273] truncate">{details}</p>
+        <div className="mt-1 font-sans font-black text-sm text-[#302033] sm:hidden">₹{price}</div>
       </div>
-      {line.kind === "product" ? (
-        <div className="flex items-center gap-1 rounded-full border bg-background p-1">
-          <button
-            onClick={() => onQty(line.qty - 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary"
-          >
-            −
-          </button>
-          <span className="w-6 text-center text-sm font-bold">{line.qty}</span>
-          <button
-            onClick={() => onQty(line.qty + 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary"
-          >
-            +
-          </button>
+
+      <div className="flex items-center gap-4">
+        {line.kind === "product" ? (
+          <div className="flex items-center gap-1 rounded border border-[#EDE9E1] bg-white px-2 py-1 shadow-xs">
+            <button
+              onClick={() => onQty(line.qty - 1)}
+              className="h-5 w-5 flex items-center justify-center text-[#6F6273] hover:text-[#302033] cursor-pointer"
+            >
+              −
+            </button>
+            <span className="w-5 text-center text-xs font-mono font-bold text-[#302033]">
+              {line.qty}
+            </span>
+            <button
+              onClick={() => onQty(line.qty + 1)}
+              className="h-5 w-5 flex items-center justify-center text-[#6F6273] hover:text-[#302033] cursor-pointer"
+            >
+              +
+            </button>
+          </div>
+        ) : null}
+
+        <div className="hidden sm:block font-sans font-black text-base text-[#302033] w-20 text-right">
+          ₹{price}
         </div>
-      ) : null}
-      <div className="w-20 text-right font-display text-sm font-bold">₹{price}</div>
-      <button
-        onClick={onRemove}
-        aria-label="Remove"
-        className="rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+
+        <button
+          onClick={onRemove}
+          aria-label="Remove item"
+          className="rounded p-2 text-[#6F6273] hover:text-[#E53935] hover:bg-[#E53935]/10 transition-colors cursor-pointer"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }

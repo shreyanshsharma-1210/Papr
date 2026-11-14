@@ -1,28 +1,28 @@
-import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-
+import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { Header } from "@/components/Header";
 import { MobileNav } from "@/components/MobileNav";
-import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
-import { Link } from "@tanstack/react-router";
+import { NavigationProgressBar } from "@/components/NavigationProgressBar";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-[70vh] items-center justify-center bg-[#F7F5EF] px-4">
       <div className="max-w-md text-center">
-        <h1 className="font-display text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+        <span className="font-sans text-8xl font-black text-[#F16A45]">404</span>
+        <h1 className="mt-4 font-sans text-3xl font-black text-[#302033]">Page Not Found</h1>
+        <p className="mt-3 text-xs sm:text-sm text-[#6F6273] leading-relaxed">
+          The stationery collection, kit, or print job you are looking for has been archived, moved,
+          or does not exist.
         </p>
-        <div className="mt-6">
+        <div className="mt-8">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft hover:bg-primary/90"
+            preload="intent"
+            className="inline-flex items-center justify-center rounded-xl bg-[#D7F05A] px-6 py-3 text-xs font-black uppercase tracking-wider text-[#302033] hover:bg-[#c8e348] border border-[#302033]/20 shadow-sm transition-all"
           >
-            Go home
+            Return to Storefront
           </Link>
         </div>
       </div>
@@ -35,26 +35,27 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Kaagaz Stationers — Same-Day Stationery Delivery in Indore" },
+      { title: "PAPR — Stationery · Essentials · Print" },
       {
         name: "description",
         content:
-          "Class-wise & college-wise verified stationery kits delivered same-day across Indore. Order till 9 PM. COD, UPI & WhatsApp ordering.",
+          "Make room for ideas. Thoughtfully curated school and college kits, fine writing instruments, notebook systems, and high-precision print studio.",
       },
-      { name: "author", content: "Kaagaz Stationers" },
-      { property: "og:title", content: "Kaagaz Stationers — Same-Day Stationery Delivery in Indore" },
+      { name: "author", content: "PAPR" },
+      { property: "og:title", content: "PAPR — Stationery · Essentials · Print" },
       {
         property: "og:description",
-        content: "Same-day stationery delivery in Indore. Verified class & college kits.",
+        content:
+          "Make room for ideas. Thoughtfully curated school and college kits, everyday essentials, and custom document printing.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Kaagaz Stationers — Same-Day Stationery Delivery in Indore" },
-      { name: "description", content: "Neighborly Tools connects neighbors to rent tools locally, fostering a sharing economy." },
-      { property: "og:description", content: "Neighborly Tools connects neighbors to rent tools locally, fostering a sharing economy." },
-      { name: "twitter:description", content: "Neighborly Tools connects neighbors to rent tools locally, fostering a sharing economy." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8c423ff1-8faf-4f0b-9c6f-a15a8ca58be4/id-preview-a8885b54--6ea385a1-da76-4254-b195-95d3628b869f.lovable.app-1776867081787.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8c423ff1-8faf-4f0b-9c6f-a15a8ca58be4/id-preview-a8885b54--6ea385a1-da76-4254-b195-95d3628b869f.lovable.app-1776867081787.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "PAPR — Stationery · Essentials · Print" },
+      {
+        name: "twitter:description",
+        content:
+          "Make room for ideas. Curated academic kits, desk essentials, and on-demand print studio.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -62,8 +63,9 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap",
       },
+      { rel: "preload", as: "image", href: "/images/products/p-nb-200.jpg" },
     ],
   }),
   shellComponent: RootShell,
@@ -87,15 +89,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <div className="flex min-h-screen flex-col pb-16 md:pb-0">
+    <div className="flex min-h-screen flex-col bg-[#F7F5EF] text-[#302033] antialiased selection:bg-[#D7F05A] selection:text-[#302033] pb-16 md:pb-0">
+      <NavigationProgressBar />
       <Header />
       <main className="flex-1">
         <Outlet />
       </main>
       <Footer />
-      <WhatsAppFab />
       <MobileNav />
-      <Toaster />
+      <Toaster position="top-center" />
     </div>
   );
 }

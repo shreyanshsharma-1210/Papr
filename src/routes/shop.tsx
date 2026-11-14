@@ -1,151 +1,285 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Search, Filter, Plus, Check } from "lucide-react";
-import { PRODUCTS } from "@/lib/mock-data";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Filter, Plus, Check, Tag, ArrowUpDown } from "lucide-react";
+import { fetchProducts } from "@/lib/db-service";
+import { CATEGORIES } from "@/lib/mock-data";
+import { ProductImage } from "@/components/ProductImage";
+import { LogoLoader } from "@/components/LogoLoader";
 import { useCart } from "@/lib/cart-store";
+import type { Product } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop")({
-  component: Shop,
+  component: ShopPage,
 });
 
-const CATEGORIES = ["All", "School", "College", "Office", "Art & Craft", "Printing"] as const;
+type SortOption = "featured" | "price-asc" | "price-desc" | "name";
 
-function Shop() {
+function ShopPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [cat, setCat] = useState<(typeof CATEGORIES)[number]>("All");
-  const [maxPrice, setMaxPrice] = useState(2000);
+  const [category, setCategory] = useState<string>("all");
+  const [maxPrice, setMaxPrice] = useState<number>(2500);
   const [sameDayOnly, setSameDayOnly] = useState(false);
+  const [sort, setSort] = useState<SortOption>("featured");
 
-  const products = useMemo(() => {
+  useEffect(() => {
+    let mounted = true;
+    fetchProducts().then((data) => {
+      if (mounted) {
+        setProducts(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PRODUCTS.filter((p) => {
-      if (cat !== "All" && p.category !== cat) return false;
+    let res = products.filter((p) => {
+      if (category !== "all" && p.category !== category) return false;
       if (p.price > maxPrice) return false;
       if (sameDayOnly && !p.sameDay) return false;
-      if (q && !(p.name.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q))) return false;
+      if (
+        q &&
+        !(
+          p.name.toLowerCase().includes(q) ||
+          p.brand?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
+        )
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [query, cat, maxPrice, sameDayOnly]);
+
+    switch (sort) {
+      case "price-asc":
+        res = [...res].sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        res = [...res].sort((a, b) => b.price - a.price);
+        break;
+      case "name":
+        res = [...res].sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "featured":
+      default:
+        res = [...res].sort((a, b) => (b.tag ? 1 : 0) - (a.tag ? 1 : 0));
+        break;
+    }
+
+    return res;
+  }, [products, query, category, maxPrice, sameDayOnly, sort]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 md:py-10">
-      <h1 className="font-display text-2xl font-extrabold md:text-3xl">Shop</h1>
-      <p className="text-sm text-muted-foreground">
-        Notebooks, pens, files, calculators &amp; more — same-day delivery in Indore.
-      </p>
-
-      <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="flex flex-1 items-center gap-2 rounded-full border bg-background px-4 py-2.5">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search notebooks, pens, geometry box..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-8 bg-[#F7F5EF]">
+      {/* Header */}
+      <div className="border-b border-[#EDE9E1] pb-6">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#EDE9E1] px-3 py-1 text-xs font-bold text-[#302033] border border-[#302033]/15">
+          <Tag className="h-3 w-3 text-[#F16A45]" /> PAPR Catalogue
         </div>
-        <label className="inline-flex items-center gap-2 rounded-full border bg-background px-4 py-2.5 text-sm">
-          <input
-            type="checkbox"
-            checked={sameDayOnly}
-            onChange={(e) => setSameDayOnly(e.target.checked)}
-            className="h-4 w-4 accent-primary"
-          />
-          Same-day eligible
-        </label>
+        <h1 className="font-sans font-black text-4xl sm:text-5xl text-[#302033] mt-2">
+          Everyday Essentials
+        </h1>
+        <p className="mt-2 text-xs sm:text-sm text-[#6F6273] max-w-xl leading-relaxed">
+          Curated paper, notebooks, Japanese drafting tools, and verified academic supplies. 100%
+          genuine brand quality with same-day dispatch available across major cities.
+        </p>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {CATEGORIES.map((c) => (
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6F6273]" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search notebooks, Casio, pens, rulers, textbooks..."
+            className="w-full rounded-xl border border-[#EDE9E1] bg-white pl-10 pr-4 py-2.5 text-xs font-medium text-[#302033] placeholder:text-[#6F6273]/60 focus:outline-none focus:border-[#302033] shadow-2xs"
+          />
+        </div>
+
+        {/* Sort & Same Day Controls */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
-            key={c}
-            onClick={() => setCat(c)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-              cat === c
-                ? "border-primary bg-primary text-primary-foreground"
-                : "bg-background text-muted-foreground hover:border-primary hover:text-foreground"
+            onClick={() => setSameDayOnly(!sameDayOnly)}
+            className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+              sameDayOnly
+                ? "border-[#F16A45] bg-[#F16A45]/15 text-[#F16A45]"
+                : "border-[#EDE9E1] bg-white text-[#6F6273] hover:text-[#302033]"
             }`}
           >
-            {c}
+            ⚡ Express Same-Day Only
+          </button>
+
+          <div className="flex items-center gap-1.5 rounded-xl border border-[#EDE9E1] bg-white px-3 py-1.5 text-xs text-[#6F6273]">
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOption)}
+              aria-label="Sort products by"
+              className="bg-transparent font-bold text-[#302033] focus:outline-none cursor-pointer"
+            >
+              <option value="featured">Featured First</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name">Alphabetical (A–Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Pills & Price Slider */}
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#EDE9E1]">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setCategory(cat.id)}
+            className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
+              category === cat.id
+                ? "bg-[#D7F05A] text-[#302033] shadow-xs border border-[#302033]/20"
+                : "border border-[#EDE9E1] bg-white text-[#6F6273] hover:text-[#302033] hover:border-[#302033]/40"
+            }`}
+          >
+            {cat.label}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          <Filter className="h-3.5 w-3.5" />
-          <span>Up to ₹{maxPrice}</span>
+
+        <div className="flex items-center gap-2.5 text-xs font-bold text-[#6F6273] ml-auto bg-white border border-[#EDE9E1] px-3.5 py-1.5 rounded-xl shadow-2xs">
+          <Filter className="h-3.5 w-3.5 text-[#F16A45]" />
+          <span>Under ₹{maxPrice}</span>
           <input
             type="range"
             min={50}
-            max={2000}
+            max={2500}
             step={50}
             value={maxPrice}
             onChange={(e) => setMaxPrice(Number(e.target.value))}
-            className="w-32 accent-primary"
+            className="accent-[#302033] w-28 cursor-pointer"
           />
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-        {products.length === 0 && (
-          <div className="col-span-full rounded-2xl border bg-card p-10 text-center text-sm text-muted-foreground">
-            No products match your filters.
-          </div>
-        )}
-      </div>
+      {/* Product Grid */}
+      {loading ? (
+        <LogoLoader size="lg" variant="card" label="Retrieving curated everyday essentials..." />
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((product, idx) => (
+            <ProductItem key={product.id} product={product} priority={idx < 6} />
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="col-span-full rounded-2xl border-2 border-dashed border-[#EDE9E1] bg-white p-16 text-center">
+              <h3 className="font-sans font-black text-2xl text-[#302033]">
+                No matching items found
+              </h3>
+              <p className="mt-2 text-xs text-[#6F6273] max-w-sm mx-auto">
+                Try widening your price range or clearing search &amp; category filters.
+              </p>
+              <button
+                onClick={() => {
+                  setQuery("");
+                  setCategory("all");
+                  setMaxPrice(2500);
+                  setSameDayOnly(false);
+                }}
+                className="mt-6 rounded-xl bg-[#D7F05A] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-[#302033] hover:bg-[#cae64c] transition-colors border border-[#302033]/20 shadow-xs"
+              >
+                Reset All Filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function ProductCard({ product: p }: { product: (typeof PRODUCTS)[number] }) {
+function ProductItem({ product: p, priority = false }: { product: Product; priority?: boolean }) {
   const addProduct = useCart((s) => s.addProduct);
   const [added, setAdded] = useState(false);
   const discount = p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+
   return (
-    <div className="flex flex-col rounded-2xl border bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
-      <div className="flex h-32 items-center justify-center rounded-xl bg-gradient-to-br from-secondary to-accent/20 text-2xl font-display font-extrabold text-muted-foreground">
-        {p.name.slice(0, 2).toUpperCase()}
+    <div className="group flex flex-col justify-between rounded-2xl border border-[#EDE9E1] bg-white p-4 transition-all hover:border-[#302033] hover:shadow-md">
+      <div>
+        {/* Genuine Product Image Component with Async & Priority Loading */}
+        <ProductImage
+          src={p.image || `/images/products/${p.id}.jpg`}
+          alt={p.name}
+          aspect="square"
+          priority={priority}
+          badge={p.tag}
+          badgeVariant={p.tag === "Bestseller" ? "persimmon" : "lime"}
+        />
+
+        <div className="mt-3.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#6F6273]">
+          <span>{p.brand}</span>
+          <div className="flex items-center gap-1.5">
+            {p.sameDay && (
+              <span className="rounded bg-[#F16A45]/15 px-1.5 py-0.5 text-[#F16A45] font-black">
+                Same-Day
+              </span>
+            )}
+          </div>
+        </div>
+
+        <h3 className="mt-1 font-sans font-bold text-base text-[#302033] group-hover:text-[#F16A45] transition-colors line-clamp-1">
+          {p.name}
+        </h3>
+        <p className="mt-1 text-xs text-[#6F6273] line-clamp-2">
+          {p.description ||
+            "Everyday stationery essential designed for clean writing and endurance."}
+        </p>
       </div>
-      <div className="mt-3 flex flex-1 flex-col">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">{p.brand}</div>
-        <div className="mt-0.5 line-clamp-2 text-sm font-semibold">{p.name}</div>
-        <div className="mt-1 flex items-baseline gap-2">
-          <span className="font-display text-lg font-bold">₹{p.price}</span>
+
+      <div className="mt-4 pt-3.5 border-t border-[#EDE9E1] flex items-center justify-between">
+        <div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-sans font-black text-xl text-[#302033]">₹{p.price}</span>
+            {p.mrp > p.price && (
+              <span className="text-xs text-[#6F6273] line-through font-mono">₹{p.mrp}</span>
+            )}
+          </div>
           {discount > 0 && (
-            <>
-              <span className="text-xs text-muted-foreground line-through">₹{p.mrp}</span>
-              <span className="text-xs font-semibold text-success">-{discount}%</span>
-            </>
+            <span className="text-[10px] font-bold text-[#F16A45]">Save {discount}% off MRP</span>
           )}
         </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {p.sameDay && (
-            <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold">Same-day</span>
-          )}
-          {p.inStock ? (
-            <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success">
-              In stock
-            </span>
-          ) : (
-            <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-              Out of stock
-            </span>
-          )}
-        </div>
+
         <button
-          disabled={!p.inStock}
           onClick={() => {
             addProduct(p.id, 1);
             setAdded(true);
-            toast.success(`${p.name} added to cart`);
+            toast.success(`Added ${p.name} to cart`);
             setTimeout(() => setAdded(false), 1500);
           }}
-          className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-soft hover:bg-primary/90 disabled:opacity-50"
+          disabled={!p.inStock}
+          className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition-all ${
+            added
+              ? "bg-[#302033] text-[#D7F05A]"
+              : p.inStock
+                ? "bg-[#D7F05A] text-[#302033] hover:bg-[#c8e348] border border-[#302033]/20 shadow-xs active:scale-95"
+                : "bg-[#EDE9E1] text-[#6F6273] cursor-not-allowed"
+          }`}
         >
-          {added ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {added ? "Added" : "Add to cart"}
+          {added ? (
+            <>
+              <Check className="h-3.5 w-3.5" /> Added
+            </>
+          ) : p.inStock ? (
+            <>
+              <Plus className="h-3.5 w-3.5" /> Add
+            </>
+          ) : (
+            "Out of Stock"
+          )}
         </button>
       </div>
     </div>

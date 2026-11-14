@@ -1,39 +1,44 @@
 import { Link } from "@tanstack/react-router";
-import { Home, BookOpen, GraduationCap, Store, ShoppingBag } from "lucide-react";
+import { Home, Compass, BookOpen, Printer, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart-store";
 
 const items = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/class-kits", label: "Class", icon: BookOpen },
-  { to: "/college-kits", label: "College", icon: GraduationCap },
-  { to: "/shop", label: "Shop", icon: Store },
+  { to: "/shop", label: "Shop", icon: Compass },
+  { to: "/class-kits", label: "Kits", icon: BookOpen },
+  { to: "/printing", label: "Print", icon: Printer },
   { to: "/cart", label: "Cart", icon: ShoppingBag },
 ] as const;
 
 export function MobileNav() {
   const count = useCart((s) => s.count());
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-      <ul className="mx-auto flex max-w-xl items-stretch justify-between px-2">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EDE9E1] bg-[#F7F5EF]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+      <ul className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
         {items.map((it) => {
           const Icon = it.icon;
           return (
-            <li key={it.to} className="flex-1">
+            <li key={it.to} className="flex-1 text-center">
               <Link
                 to={it.to}
-                className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-medium text-muted-foreground"
-                activeProps={{ className: "flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-semibold text-primary" }}
+                preload="intent"
+                className="flex flex-col items-center justify-center gap-1 py-1 text-[10px] uppercase tracking-wider font-bold text-[#6F6273] transition-colors hover:text-[#302033]"
+                activeProps={{
+                  className:
+                    "flex flex-col items-center justify-center gap-1 py-1 text-[10px] uppercase tracking-wider font-black text-[#302033]",
+                }}
                 activeOptions={{ exact: it.to === "/" }}
               >
                 <span className="relative">
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
                   {it.to === "/cart" && count > 0 && (
-                    <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-foreground">
+                    <span className="absolute -top-1.5 -right-2.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#F16A45] px-1 text-[9px] font-black text-white ring-2 ring-[#F7F5EF]">
                       {count}
                     </span>
                   )}
                 </span>
-                {it.label}
+                <span>{it.label}</span>
               </Link>
             </li>
           );
