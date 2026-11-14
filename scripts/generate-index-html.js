@@ -24,9 +24,18 @@ if (fs.existsSync(assetsDir)) {
   if (preRenderedHtml && preRenderedHtml.includes("<body")) {
     // Replace dev styles and vite scripts with production hashed assets
     finalHtml = preRenderedHtml
-      .replace(/<link rel="stylesheet" href="\/src\/styles\.css"\/>/, `<link rel="stylesheet" href="/assets/${cssFile}"/>`)
-      .replace(/<link rel="stylesheet" href="\/@tanstack-start\/styles\.css[^"]*"\s*data-tanstack-router-dev-styles="true"\/>/, "")
-      .replace(/<script[^>]*virtual:tanstack-start-client-entry[^>]*><\/script>/g, `<script type="module" src="/assets/${clientJsFile}"></script>`)
+      .replace(
+        /<link rel="stylesheet" href="\/src\/styles\.css"\/>/,
+        `<link rel="stylesheet" href="/assets/${cssFile}"/>`,
+      )
+      .replace(
+        /<link rel="stylesheet" href="\/@tanstack-start\/styles\.css[^"]*"\s*data-tanstack-router-dev-styles="true"\/>/,
+        "",
+      )
+      .replace(
+        /<script[^>]*virtual:tanstack-start-client-entry[^>]*><\/script>/g,
+        `<script type="module" src="/assets/${clientJsFile}"></script>`,
+      )
       .replace(/<script[^>]*@react-refresh[^>]*><\/script>/g, "");
   } else {
     finalHtml = `<!DOCTYPE html>

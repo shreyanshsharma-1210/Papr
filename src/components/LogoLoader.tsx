@@ -74,12 +74,15 @@ export function LogoLoader({
           style={{ animationDuration: "2.2s", animationDirection: "reverse" }}
         />
 
-        {/* Central PAPR Monogram Tile */}
+        {/* Central PAPR Monogram Mark */}
         <div
-          className={`relative z-10 flex items-center justify-center bg-[#302033] font-sans font-black text-[#D7F05A] shadow-xl border border-[#D7F05A]/30 transition-all ${sizeStyles.box}`}
+          className={`relative z-10 flex items-center justify-center bg-white p-2 shadow-xl border border-[#D7F05A]/40 transition-all ${sizeStyles.box}`}
         >
-          {/* Logo P with subtle scale pulse */}
-          <span className="inline-block animate-pulse">P</span>
+          <img
+            src="/images/papr-mark.png"
+            alt="PAPR"
+            className="h-full w-full object-contain animate-pulse"
+          />
 
           {/* Bouncing Signature Persimmon Accent Dot */}
           <span
